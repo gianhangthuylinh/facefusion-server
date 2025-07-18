@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  facefusion-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+      args:
+        FACEFUSION_VERSION: ${FACEFUSION_VERSION:-3.3.2}
+    ports:
+      - "${PORT:-7860}:7860"
+    volumes:
+      - ./results:/app/results
+      - ./uploads:/app/uploads
+    environment:
+      - GRADIO_SERVER_NAME=0.0.0.0
+      - PIP_BREAK_SYSTEM_PACKAGES=1
+      - PYTHONUNBUFFERED=1
+      - EXECUTION_PROVIDERS=${EXECUTION_PROVIDERS:-cuda}
+      - EXECUTION_THREAD_COUNT=${EXECUTION_THREAD_COUNT:-8}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, video]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
