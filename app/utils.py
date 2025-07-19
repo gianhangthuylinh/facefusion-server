@@ -1,6 +1,8 @@
 import subprocess
 import os
 import uuid
+import time
+import math
 
 def run_facefusion(source_path, target_path, type="image", processor="face_swapper face_enhancer"):
     """
@@ -56,6 +58,7 @@ def run_facefusion(source_path, target_path, type="image", processor="face_swapp
     # Khởi tạo process là None
     process = None
     error_output = []
+    start_time = time.time()
 
     try:
         # Sử dụng subprocess.run với streaming output
@@ -108,6 +111,13 @@ def run_facefusion(source_path, target_path, type="image", processor="face_swapp
             except:
                 pass
 
+        # Tính toán thời gian xử lý và làm tròn lên
+        end_time = time.time()
+        processing_time = end_time - start_time
+
+        # Làm tròn lên đến số nguyên
+        processing_time_rounded = math.ceil(processing_time)
+
         print("--- Hoàn thành xử lý FaceFusion ---")
 
         # Kiểm tra lỗi
@@ -132,8 +142,8 @@ def run_facefusion(source_path, target_path, type="image", processor="face_swapp
         if file_size == 0:
             raise Exception("File kết quả có kích thước 0 bytes")
 
-        print(f"Xử lý thành công. File đầu ra: {final_output} ({file_size} bytes)")
-        return final_output
+        print(f"Xử lý thành công trong {processing_time_rounded} giây (thực tế: {processing_time:.2f}s). File đầu ra: {final_output} ({file_size} bytes)")
+        return final_output, processing_time_rounded
 
     except subprocess.TimeoutExpired:
         if process is not None:

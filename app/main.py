@@ -1,4 +1,5 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, \
+    BackgroundTasks
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -37,6 +38,7 @@ MIME_TYPES = {
     ".mkv": "video/x-matroska",
 }
 
+
 # Hàm xóa file tạm
 def cleanup_temp_files(file_paths):
     for file_path in file_paths:
@@ -45,6 +47,7 @@ def cleanup_temp_files(file_paths):
                 os.remove(file_path)
         except Exception as e:
             print(f"Lỗi khi xóa file tạm {file_path}: {e}")
+
 
 @app.post("/swap")
 async def swap_faces(
@@ -58,26 +61,33 @@ async def swap_faces(
 
     try:
         # Lưu source file với đúng định dạng
-        source_ext = os.path.splitext(source.filename)[1].lower() if source.filename else ".png"
-        if not source_ext or source_ext not in [".jpg", ".jpeg", ".png", ".webp", ".bmp"]:
+        source_ext = os.path.splitext(source.filename)[
+            1].lower() if source.filename else ".png"
+        if not source_ext or source_ext not in [".jpg", ".jpeg", ".png",
+                                                ".webp", ".bmp"]:
             source_ext = ".png"  # Mặc định là png nếu không xác định được
 
-        source_path = os.path.join(UPLOAD_DIR, f"source_{uuid.uuid4()}{source_ext}")
+        source_path = os.path.join(UPLOAD_DIR,
+                                   f"source_{uuid.uuid4()}{source_ext}")
         temp_files.append(source_path)
 
         # Lưu target file với đúng định dạng
-        target_ext = os.path.splitext(target.filename)[1].lower() if target.filename else ".jpg"
+        target_ext = os.path.splitext(target.filename)[
+            1].lower() if target.filename else ".jpg"
         # Nếu type là video nhưng định dạng không phải video, thông báo lỗi
-        if type == "video" and target_ext not in [".mp4", ".avi", ".mov", ".webm", ".mkv", ".flv"]:
+        if type == "video" and target_ext not in [".mp4", ".avi", ".mov",
+                                                  ".webm", ".mkv", ".flv"]:
             return JSONResponse(
                 status_code=400,
-                content={"error": f"Định dạng file {target_ext} không hỗ trợ cho video. Vui lòng sử dụng MP4, AVI, MOV, WEBM, MKV hoặc FLV."}
+                content={
+                    "error": f"Định dạng file {target_ext} không hỗ trợ cho video. Vui lòng sử dụng MP4, AVI, MOV, WEBM, MKV hoặc FLV."}
             )
         # Nếu không xác định được định dạng
         if not target_ext:
             target_ext = ".mp4" if type == "video" else ".png"
 
-        target_path = os.path.join(UPLOAD_DIR, f"target_{uuid.uuid4()}{target_ext}")
+        target_path = os.path.join(UPLOAD_DIR,
+                                   f"target_{uuid.uuid4()}{target_ext}")
         temp_files.append(target_path)
 
         # Ghi file
@@ -87,7 +97,7 @@ async def swap_faces(
             f.write(await target.read())
 
         # Xử lý face swap
-        output_path = run_facefusion(source_path, target_path, type, processor)
+        output_path, processing_time_rounded = run_facefusion(source_path, target_path, type, processor)
 
         # Thêm output_path vào danh sách file cần xóa
         temp_files.append(output_path)
@@ -105,12 +115,19 @@ async def swap_faces(
         else:
             output_filename = f"result{output_ext}"
 
+        headers = {
+            "X-Processing-Time": str(processing_time_rounded),
+            "X-Processing-Time-Text": f"Xử lý hoàn tất trong {processing_time_rounded} giây",
+            "Access-Control-Expose-Headers": "X-Processing-Time, X-Processing-Time-Text"  # Cho phép frontend đọc headers
+        }
+
         # Trả về file kết quả
         return FileResponse(
             path=output_path,
             filename=output_filename,
             media_type=output_mime,
-            background=background_tasks
+            background=background_tasks,
+            headers=headers,
         )
     except Exception as e:
         # Đảm bảo xóa file tạm trong trường hợp lỗi
@@ -121,6 +138,8 @@ async def swap_faces(
             content={"error": str(e)}
         )
 
+
 @app.get("/")
 async def root():
-    return {"message": "FaceFusion API hoạt động, sử dụng /swap endpoint để hoán đổi khuôn mặt"}
+    return {
+        "message": "FaceFusion API hoạt động, sử dụng /swap endpoint để hoán đổi khuôn mặt"}
