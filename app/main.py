@@ -117,7 +117,6 @@ async def swap_faces(
 
         headers = {
             "X-Processing-Time": str(processing_time_rounded),
-            "X-Processing-Time-Text": f"Xử lý hoàn tất trong {processing_time_rounded} giây",
             "Access-Control-Expose-Headers": "X-Processing-Time, X-Processing-Time-Text"  # Cho phép frontend đọc headers
         }
 

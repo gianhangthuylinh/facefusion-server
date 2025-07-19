@@ -58,7 +58,6 @@ def run_facefusion(source_path, target_path, type="image", processor="face_swapp
     # Khởi tạo process là None
     process = None
     error_output = []
-    start_time = time.time()
 
     try:
         # Sử dụng subprocess.run với streaming output
@@ -74,6 +73,8 @@ def run_facefusion(source_path, target_path, type="image", processor="face_swapp
 
         # Đọc và in output theo thời gian thực
         print("--- Bắt đầu xử lý FaceFusion ---")
+        start_time = time.time()
+
         while True:
             # Kiểm tra process có còn chạy không
             if process.poll() is not None:
